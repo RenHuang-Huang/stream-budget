@@ -91,20 +91,28 @@ async function runAutoMatch(records, { force = false } = {}) {
 
 // ── 匯入過去紀錄 ──
 // 開背景分頁到各平台的紀錄頁，由各頁的 content script 自動翻頁；進度記在 storage.backfill
-const BACKFILL_TTL = 30 * 60 * 1000; // 超過 30 分鐘視為結束（例如分頁被關掉、沒登入卡住）
+// 超過 30 分鐘沒有任何進度視為結束（例如分頁被關掉、沒登入卡住）。
+// 以「最後一次進度」計時而不是開始時間，匯入「全部」翻很多頁時才不會做到一半被當成結束。
+const BACKFILL_TTL = 30 * 60 * 1000;
+
+function isRunning(backfill) {
+  if (!backfill || backfill.finishedAt) return false;
+  const last = Math.max(backfill.startedAt, ...Object.values(backfill.progress || {}).map((p) => p.at || 0));
+  return Date.now() - last < BACKFILL_TTL;
+}
 
 async function getBackfill() {
   const { backfill } = await get('backfill');
-  if (!backfill || backfill.finishedAt || Date.now() - backfill.startedAt > BACKFILL_TTL) return null;
-  return backfill;
+  return isRunning(backfill) ? backfill : null;
 }
 
 /**
  * 開背景分頁開始抓紀錄。
- * - 匯入過去紀錄：months 個月前到現在（kind = 'backfill'）
+ * - 匯入過去紀錄：months 個月前到現在；months = 0 表示全部（kind = 'backfill'）
  * - 自動更新：since 指定起點（上次更新的前一天），只抓最近的（kind = 'sync'），分頁開在使用者那個平台頁面的視窗
  */
 async function startBackfill({ months = 6, since, kind = 'backfill', windowId, index } = {}) {
+  if (!since && !months) since = new Date(0).toISOString(); // 全部：一路翻到最舊
   if (!since) {
     const d = new Date();
     d.setMonth(d.getMonth() - months);
@@ -242,7 +250,10 @@ const handlers = {
     const bf = await getBackfill();
     return bf && sender?.tab && bf.tabIds.includes(sender.tab.id) ? bf : null;
   },
-  getBackfillStatus: async () => (await get('backfill')).backfill || null,
+  getBackfillStatus: async () => {
+    const { backfill } = await get('backfill');
+    return backfill ? { ...backfill, running: isRunning(backfill) } : null;
+  },
   startBackfill: (msg) => serial(() => startBackfill(msg)),
   backfillProgress: (msg) => serial(() => backfillProgress(msg)),
   backfillDone: (msg, sender) => serial(() => backfillDone(msg, sender)),
@@ -258,7 +269,10 @@ const handlers = {
     if (backfill?.tabIds?.includes(id)) return null;
     return serial(() => maybeSync({ tab: sender.tab }));
   },
-  syncNow: () => serial(() => maybeSync({ force: true })),
+  syncNow: () => serial(async () => {
+    if (!Object.keys(await activeConnections()).length) return { started: false, reason: 'noConnection' };
+    return maybeSync({ force: true });
+  }),
   getSyncStatus: async () => {
     const [{ lastSyncAt = 0 }, settings] = await Promise.all([get('lastSyncAt'), getSettings()]);
     return { lastSyncAt, interval: settings.syncInterval ?? DEFAULT_SETTINGS.syncInterval, platformOpen: !!(await livePlatformTab()) };

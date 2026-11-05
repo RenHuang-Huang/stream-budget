@@ -58,3 +58,6 @@ form .wide { grid-column: span 2; }
 form input[type=date] { font-family: var(--mono); }
 
 .foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.foot .wide { grid-column: 1 / -1; }
+.sync-line { margin: -2px 0 2px; font-size: 12px; text-align: center; }
+.sync-line:empty { display: none; }

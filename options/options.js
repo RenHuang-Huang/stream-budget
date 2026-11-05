@@ -171,7 +171,9 @@ $('#syncInterval').onchange = async () => {
 };
 $('#syncNow').onclick = async () => {
   const r = await send('syncNow');
-  $('#syncStatus').textContent = r.started ? '更新中…（背景分頁完成後會自動關閉）' : r.reason === 'busy' ? '目前已有匯入／更新在進行' : '無法開始';
+  $('#syncStatus').textContent = r.started ? '更新中…（背景分頁完成後會自動關閉）'
+    : r.reason === 'busy' ? '目前已有匯入／更新在進行'
+    : r.reason === 'noConnection' ? '請先在上方連結至少一個平台' : '無法開始';
   renderBackfill();
   setTimeout(renderSync, 4000);
 };
@@ -181,7 +183,7 @@ const fmtDate = (s) => (s ? new Date(s.length === 10 ? `${s}T12:00:00` : s).toLo
 let pollTimer;
 async function renderBackfill() {
   const bf = await send('getBackfillStatus');
-  const running = bf && !bf.finishedAt && Date.now() - bf.startedAt < 30 * 60 * 1000;
+  const running = !!bf?.running;
   $('#backfillStart').disabled = !!running;
   $('#backfillStart').textContent = running ? '匯入中…' : '開始匯入';
   if (!running && !Object.values(connections).some(Boolean)) $('#backfillStart').disabled = true;
@@ -202,7 +204,7 @@ async function renderBackfill() {
     const li = Object.assign(document.createElement('li'), { className: 'summary' });
     li.textContent = bf.kind === 'sync'
       ? `自動更新完成（${new Date(bf.finishedAt).toLocaleString('zh-TW')}）`
-      : `匯入結束（${new Date(bf.finishedAt).toLocaleString('zh-TW')}，近 ${bf.months} 個月）`;
+      : `匯入結束（${new Date(bf.finishedAt).toLocaleString('zh-TW')}，${bf.months ? `近 ${bf.months} 個月` : '全部'}）`;
     $('#backfillProgress').appendChild(li);
   }
   clearTimeout(pollTimer);

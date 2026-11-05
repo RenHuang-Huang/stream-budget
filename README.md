@@ -58,12 +58,12 @@ npm run e2e       # 在 Chromium 載入 extension（測試版直接給網站權�
   - 有多個付款資料時要各切換過去一次；選項頁可勾選哪些付款資料計入
   - 網頁付的 Super Chat 只寫「YouTube 超級留言」，沒有頻道 → 計入總額、列在未對應；若在直播聊天室送出時有被 `ytchat.js` 記到，會用金額＋日期（±1 天）補上頻道
   - 心可可的 YouTube 頻道在付款紀錄顯示為「心 cocor0」，預設別名 `cocor0` 對得到
-- [x] 匯入過去紀錄（選項頁，第一次安裝時會詢問；預設近 6 個月）
+- [x] 匯入過去紀錄（選項頁，第一次安裝時會詢問；可選近 1／3／6／12 個月或全部，預設近 6 個月）
   - 背景開 HiveBee 付費贊助／VIP 訂閱、Google 付款中心分頁，content script 自動翻頁，做完自動關閉；進度記在 `storage.backfill`，30 分鐘逾時
   - HiveBee：每頁改 50 筆，按分頁列右側箭頭（`button.min-w-7` 父層的下一個兄弟），disabled 即最後一頁
   - Google：按「查看更多交易」（div.jfk-button，需送 mousedown/mouseup，`SB.press`）；一個付款資料做完由 `gpay-top.js` 切下一個（點 `[role=option]` 會重新載入整頁），最後切回原本的付款資料
   - 背景的 storage 寫入全部排隊（`serial`），避免多個分頁同時送資料互相覆蓋
-- [x] 自動更新（選項頁：關閉／1 小時／6 小時／每天，預設 6 小時；「立即更新」）
+- [x] 自動更新（選項頁：關閉／1 小時／6 小時／每天，預設 6 小時；選項頁與彈出視窗都有「立即更新」）
   - `chrome.alarms` 每 15 分鐘檢查是否到期；到期且使用者開著 HiveBee／YouTube／Twitch 任一頁面（`presence.js` 回報到 `storage.session`）才執行，否則等下次打開平台頁面
   - 沿用匯入流程（kind = 'sync'），從上次更新前一天抓起，分頁開在該平台頁面的視窗背景
   - 只有匯入／更新自己開的分頁會自動翻頁（`getBackfill` 依 sender.tab 判斷），使用者自己開的紀錄頁不受影響

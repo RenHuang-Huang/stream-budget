@@ -68,7 +68,31 @@ $('#manual').addEventListener('submit', async (e) => {
   render();
 });
 
+// ── 立即更新：開背景分頁抓各已連結平台的最新紀錄，完成後重畫 ──
+const fmtTime = (t) => new Date(t).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+let syncTimer;
+async function renderSync() {
+  const [bf, st] = await Promise.all([send('getBackfillStatus'), send('getSyncStatus')]);
+  const running = !!bf?.running;
+  $('#syncNow').disabled = running;
+  $('#syncNow span').textContent = running ? '更新中…' : '立即更新';
+  if (running) {
+    const n = Object.values(bf.progress || {}).reduce((a, p) => a + (p.count || 0), 0);
+    $('#syncLine').textContent = `${bf.kind === 'sync' ? '更新' : '匯入'}中，已讀 ${n} 筆（背景分頁完成後會自動關閉）`;
+  } else {
+    $('#syncLine').textContent = st.lastSyncAt ? `上次更新：${fmtTime(st.lastSyncAt)}` : '';
+  }
+  clearTimeout(syncTimer);
+  if (running) syncTimer = setTimeout(async () => { await render(); renderSync(); }, 1500);
+}
+$('#syncNow').addEventListener('click', async () => {
+  const r = await send('syncNow');
+  if (!r.started && r.reason === 'noConnection') { $('#syncLine').textContent = '還沒有連結任何平台，請到「設定」連結'; return; }
+  renderSync();
+});
+
 $('#openStats').addEventListener('click', () => { chrome.tabs.create({ url: chrome.runtime.getURL('stats/stats.html') }); });
 $('#openOptions').addEventListener('click', () => { chrome.runtime.openOptionsPage(); });
 
 render();
+renderSync();

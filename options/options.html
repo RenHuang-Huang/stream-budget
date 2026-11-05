@@ -58,11 +58,10 @@
       <p id="welcome" class="welcome-msg" hidden><strong>歡迎使用！</strong>要先匯入過去的抖內紀錄嗎？之後每次打開各平台的紀錄頁也會自動更新。</p>
       <div class="row">
         <label class="control" style="width:180px">
-          <span class="pre">匯入近</span>
-          <select id="backfillMonths" aria-label="匯入月數">
-            <option value="1">1</option><option value="3">3</option><option value="6" selected>6</option><option value="12">12</option>
+          <span class="pre">匯入</span>
+          <select id="backfillMonths" aria-label="匯入範圍">
+            <option value="1">近 1 個月</option><option value="3">近 3 個月</option><option value="6" selected>近 6 個月</option><option value="12">近 12 個月</option><option value="0">全部</option>
           </select>
-          <span class="suf">個月</span>
         </label>
         <button class="btn primary" id="backfillStart">開始匯入</button>
         <button class="btn ghost" id="backfillSkip" hidden>略過</button>
