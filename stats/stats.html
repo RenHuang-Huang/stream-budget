@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>斗內統計</title>
+<link rel="stylesheet" href="stats.css">
+</head>
+<body>
+<main class="viz-root">
+  <header class="top">
+    <div class="title">
+      <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>
+      <div>
+        <h1>斗內統計</h1>
+        <p class="sub" id="asof"></p>
+      </div>
+    </div>
+    <div class="filters" role="group" aria-label="篩選">
+      <div class="seg" role="radiogroup" aria-label="期間" id="range">
+        <button role="radio" data-v="6">6 個月</button>
+        <button role="radio" data-v="12" aria-checked="true">12 個月</button>
+        <button role="radio" data-v="24">24 個月</button>
+      </div>
+      <label class="select">
+        <span>月份</span>
+        <select id="month" aria-label="圓餅圖與明細的月份"></select>
+      </label>
+      <button class="ghost" id="showTable" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>表格
+      </button>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="重點數字"></section>
+
+  <div class="grid">
+    <section class="card span-8">
+      <header class="card-h">
+        <div><h2>每月花費趨勢</h2><p class="sub">總額與期間內花費最多的 3 位・虛線為每月總額上限</p></div>
+      </header>
+      <div class="chart h-300"><canvas id="trend" aria-label="每月花費趨勢圖" role="img"></canvas></div>
+      <div class="table-wrap" id="trendTable" hidden></div>
+    </section>
+
+    <section class="card span-4">
+      <header class="card-h"><div><h2>直播主預算</h2><p class="sub" id="budgetSub"></p></div></header>
+      <ul class="meters" id="meters"></ul>
+    </section>
+
+    <section class="card span-6">
+      <header class="card-h"><div><h2>各平台每月花費</h2><p class="sub">HiveBee／YouTube／Twitch／手動</p></div></header>
+      <div class="chart h-260"><canvas id="platBars" aria-label="各平台每月花費堆疊長條圖" role="img"></canvas></div>
+    </section>
+
+    <section class="card span-3">
+      <header class="card-h"><div><h2>依直播主</h2><p class="sub" id="recipSub"></p></div></header>
+      <div class="chart donut"><canvas id="recipDonut" aria-label="依直播主環圈圖" role="img"></canvas></div>
+      <ol class="breakdown" id="recipList"></ol>
+    </section>
+
+    <section class="card span-3">
+      <header class="card-h"><div><h2>依平台</h2><p class="sub" id="platSub"></p></div></header>
+      <div class="chart donut"><canvas id="platDonut" aria-label="依平台環圈圖" role="img"></canvas></div>
+      <ol class="breakdown" id="platList"></ol>
+    </section>
+
+    <section class="card span-8">
+      <header class="card-h">
+        <div><h2>每日花費</h2><p class="sub" id="heatSub"></p></div>
+        <div class="heat-legend" id="heatLegend" aria-hidden="true"></div>
+      </header>
+      <div class="heat-wrap" id="heat"></div>
+    </section>
+
+    <section class="card span-4">
+      <header class="card-h"><div><h2>最近交易</h2><p class="sub" id="recentSub"></p></div></header>
+      <ul class="recent" id="recent"></ul>
+    </section>
+  </div>
+  <div class="tip" id="tip" role="tooltip" hidden></div>
+</main>
+<script src="../vendor/chart.umd.min.js"></script>
+<script src="../vendor/d3.min.js"></script>
+<script src="stats.js" type="module"></script>
+</body>
+</html>

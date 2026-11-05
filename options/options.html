@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>斗內預算管家 設定</title>
+<link rel="stylesheet" href="options.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="brand">
+      <span class="logo"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>
+      <div><h1>斗內預算管家</h1><p>設定</p></div>
+    </div>
+    <nav class="nav" aria-label="設定區塊">
+      <a href="#sec-import"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>匯入過去紀錄</a>
+      <a href="#sec-sync"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>自動更新</a>
+      <a href="#sec-limits"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 14 4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/></svg>每月上限</a>
+      <a href="#sec-streamers"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8"/><path d="M22 21a7 7 0 0 0-5-6.7"/></svg>直播主</a>
+      <a href="#sec-gpay"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Google 付款資料</a>
+      <a href="#sec-data"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>資料</a>
+    </nav>
+    <a class="stats-link" href="../stats/stats.html"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>查看每月圖表</a>
+  </aside>
+
+  <main class="main">
+    <section class="card" id="sec-import">
+      <div class="card-h">
+        <div>
+          <h2><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>匯入過去紀錄</h2>
+          <p class="desc">在背景開啟 HiveBee（付費贊助、VIP 訂閱）、Google 付款中心與 Twitch 錢包（付款紀錄、Bits 紀錄）並自動翻頁，完成後自動關閉。請先在 Chrome 登入這些網站。</p>
+        </div>
+      </div>
+      <p id="welcome" class="welcome-msg" hidden><strong>歡迎使用！</strong>要先匯入過去的抖內紀錄嗎？之後每次打開各平台的紀錄頁也會自動更新。</p>
+      <div class="row">
+        <label class="control" style="width:180px">
+          <span class="pre">匯入近</span>
+          <select id="backfillMonths" aria-label="匯入月數">
+            <option value="1">1</option><option value="3">3</option><option value="6" selected>6</option><option value="12">12</option>
+          </select>
+          <span class="suf">個月</span>
+        </label>
+        <button class="btn primary" id="backfillStart">開始匯入</button>
+        <button class="btn ghost" id="backfillSkip" hidden>略過</button>
+      </div>
+      <ul class="progress" id="backfillProgress"></ul>
+      <p class="hint">Google 有多個付款資料時會逐一切換，最後切回原本的付款資料。Twitch 付款紀錄最多只到約 6 個月前。</p>
+    </section>
+
+    <section class="card" id="sec-sync">
+      <div class="card-h">
+        <div>
+          <h2><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>自動更新</h2>
+          <p class="desc">到了更新時間，且你正開著 HiveBee、YouTube 或 Twitch 任一頁面時，才會在那個視窗的背景讀最近的紀錄，做完自動關閉。沒開這些頁面時不會執行，等下次打開時再補。</p>
+        </div>
+      </div>
+      <div class="row">
+        <label class="control" style="width:200px">
+          <span class="pre">頻率</span>
+          <select id="syncInterval" aria-label="自動更新頻率">
+            <option value="0">關閉</option>
+            <option value="60">每 1 小時</option>
+            <option value="360">每 6 小時</option>
+            <option value="1440">每天</option>
+          </select>
+        </label>
+        <button class="btn" id="syncNow"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>立即更新</button>
+        <span id="syncStatus" class="status-text"></span>
+      </div>
+    </section>
+
+    <section class="card" id="sec-limits">
+      <div class="card-h">
+        <div>
+          <h2><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 14 4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/></svg>每月上限</h2>
+          <p class="desc">HiveBee 贊助頁、YouTube 超級留言、Twitch 聊天室（Cheer）的送出按鈕附近，會顯示這筆送出後的本月金額（只提醒，不影響送出）。</p>
+        </div>
+      </div>
+      <div class="fields">
+        <label class="field"><span>總額上限</span>
+          <span class="control"><span class="pre">NT$</span><input id="totalLimit" type="number" min="0"></span></label>
+        <label class="field"><span>新直播主預設上限</span>
+          <span class="control"><span class="pre">NT$</span><input id="defaultStreamerLimit" type="number" min="0"></span></label>
+        <label class="field"><span>提醒門檻（達到上限的比例）</span>
+          <span class="control"><input id="warnRatio" type="number" min="0.1" max="1" step="0.05"><span class="suf">× 上限</span></span></label>
+        <label class="field"><span>Twitch 小奇點匯率</span>
+          <span class="control"><span class="pre">1 Bit =</span><input id="bitsToTWD" type="number" min="0" step="0.01"><span class="suf">NT$</span></span></label>
+        <label class="field"><span>美元匯率</span>
+          <span class="control"><span class="pre">1 USD =</span><input id="usdToTWD" type="number" min="0" step="0.1"><span class="suf">NT$</span></span></label>
+      </div>
+    </section>
+
+    <section class="card" id="sec-streamers">
+      <div class="card-h">
+        <div>
+          <h2><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 4a4 4 0 0 1 0 8"/><path d="M22 21a7 7 0 0 0-5-6.7"/></svg>直播主</h2>
+          <p class="desc">別名用逗號分隔。交易紀錄上的頻道名稱只要「包含」別名就會計入（不分大小寫，忽略符號與 emoji）。</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <label class="switch"><input type="checkbox" id="autoMatch"> 自動對應未設定的頻道</label>
+        <div class="row">
+          <span id="autoMatchStatus" class="status-text"></span>
+          <button class="btn" id="runAutoMatch">立即對應</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <colgroup><col class="c-name"><col class="c-limit"><col><col><col><col class="c-del"></colgroup>
+          <thead><tr>
+            <th>名稱</th><th>月上限 NT$</th>
+            <th><span class="plat"><i style="background:#e3a008"></i>HiveBee 別名</span></th>
+            <th><span class="plat"><i style="background:#f05252"></i>YouTube 別名</span></th>
+            <th><span class="plat"><i style="background:#9085e9"></i>Twitch 別名</span></th>
+            <th aria-label="刪除"></th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <button class="btn ghost add-row" id="add"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>新增直播主</button>
+      <p class="hint">自動對應：有新紀錄進來時，把名稱相同的頻道（跨平台）歸成同一位直播主；和既有直播主重疊就補進別名，否則新增一位（標示「自動」，上限用預設值）。刪除自動新增的直播主並儲存後，那些頻道就不會再被自動建立。</p>
+    </section>
+
+    <section class="card" id="sec-gpay">
+      <div class="card-h">
+        <div>
+          <h2><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Google 付款資料</h2>
+          <p class="desc">YouTube 會員／Super Chat，以及手機 App 付的 Twitch。到 <a href="https://pay.google.com/gp/w/home/activity" target="_blank" rel="noopener">Google 付款中心 → 活動</a> 切換右上角的付款資料後，就會出現在這裡。取消勾選的不計入（已匯入的紀錄也會排除）。</p>
+        </div>
+      </div>
+      <div class="profiles" id="gpayProfiles"></div>
+    </section>
+
+    <section class="card" id="sec-data">
+      <div class="card-h">
+        <div>
+          <h2><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>資料</h2>
+          <p class="desc">設定與交易紀錄只存在這台電腦的 Chrome 裡。換電腦前可以先匯出備份。</p>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn" id="export"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>匯出 JSON</button>
+        <label class="btn file"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg>匯入 JSON<input id="import" type="file" accept="application/json"></label>
+        <button class="btn danger" id="clear" style="margin-left:auto">清除所有交易紀錄</button>
+      </div>
+    </section>
+
+    <div class="savebar" id="savebar">
+      <div class="savebar-in">
+        <span class="msg"><span class="dot"></span><span id="status">設定都已儲存</span></span>
+        <button class="btn primary" id="save"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>儲存</button>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="options.js" type="module"></script>
+</body>
+</html>

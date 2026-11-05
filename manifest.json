@@ -1,0 +1,141 @@
+{
+  "manifest_version": 3,
+  "name": "斗內預算管家",
+  "version": "0.1.0",
+  "description": "整理 HiveBee / YouTube / Twitch 的贊助紀錄，依直播主與總額設定每月上限。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "options_page": "options/options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.hivebee.com.tw/*",
+        "https://hivebee.com.tw/*",
+        "https://www.youtube.com/*",
+        "https://www.twitch.tv/*"
+      ],
+      "js": [
+        "src/content/presence.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.hivebee.com.tw/member/history*",
+        "https://hivebee.com.tw/member/history*"
+      ],
+      "js": [
+        "src/content/common.js",
+        "src/content/hivebee.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.hivebee.com.tw/*",
+        "https://hivebee.com.tw/*"
+      ],
+      "exclude_matches": [
+        "https://www.hivebee.com.tw/member/history*",
+        "https://hivebee.com.tw/member/history*"
+      ],
+      "js": [
+        "src/content/common.js",
+        "src/content/hivebee-donate.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "src/content/common.js",
+        "src/content/youtube.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.youtube.com/live_chat?*"
+      ],
+      "js": [
+        "src/content/common.js",
+        "src/content/ytchat.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://pay.google.com/gp/w/*"
+      ],
+      "js": [
+        "src/content/common.js",
+        "src/content/gpay-top.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://payments.google.com/payments/u/*/timelineview*"
+      ],
+      "js": [
+        "src/content/common.js",
+        "src/content/gpay.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.twitch.tv/*"
+      ],
+      "js": [
+        "src/content/common.js",
+        "src/content/twitch.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.twitch.tv/*"
+      ],
+      "js": [
+        "src/content/twitch-main.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/lib/gpay.js"
+      ],
+      "matches": [
+        "https://payments.google.com/*"
+      ]
+    }
+  ]
+}

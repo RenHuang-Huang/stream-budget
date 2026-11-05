@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>斗內預算管家</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>斗內預算</h1>
+    <input type="month" id="month">
+  </header>
+
+  <section id="total" class="card"></section>
+  <section id="streamers"></section>
+
+  <details id="unmatchedBox">
+    <summary>未對應的頻道 <span id="unmatchedCount"></span></summary>
+    <ul id="unmatched"></ul>
+    <p class="hint">到「設定」把頻道名稱加進直播主的別名，就會被計入。</p>
+  </details>
+
+  <details>
+    <summary>手動新增一筆</summary>
+    <form id="manual">
+      <select name="streamerId" id="manualStreamer"></select>
+      <select name="platform">
+        <option value="youtube">YouTube</option>
+        <option value="twitch">Twitch</option>
+        <option value="hivebee">HiveBee</option>
+        <option value="manual">其他</option>
+      </select>
+      <select name="kind">
+        <option>抖內</option><option>購買會員</option><option>贈送會員</option>
+        <option>鑽石</option><option>小奇點</option><option>其他</option>
+      </select>
+      <input name="amount" type="number" min="1" placeholder="金額 NT$" required>
+      <input name="date" type="date" required>
+      <button>新增</button>
+    </form>
+  </details>
+
+  <footer><a href="#" id="openStats">每月圖表</a>　<a href="#" id="openOptions">設定上限與別名</a></footer>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
