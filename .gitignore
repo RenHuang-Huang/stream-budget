@@ -1,3 +1,8 @@
 test/out-*.png
 node_modules/
 .DS_Store
+
+# AI 開發工具（Modern Web Guidance 技能等），不屬於擴充功能本身
+.agents/
+.claude/
+skills-lock.json
