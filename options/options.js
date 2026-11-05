@@ -241,3 +241,17 @@ addEventListener('scroll', () => {
   if (innerHeight + scrollY < document.documentElement.scrollHeight - 4) return;
   navLinks.forEach((a, i) => a.classList.toggle('on', i === navLinks.length - 1));
 }, { passive: true });
+
+// ── 外觀：跟隨系統／淺色／深色（存在 localStorage，三個頁面共用，見 ui/theme.js）──
+function renderTheme() {
+  const pref = window.SBTheme.get();
+  for (const b of $('#themePick').children) b.setAttribute('aria-checked', String(b.dataset.v === pref));
+  const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  $('#themeSys').textContent = `（目前${sysDark ? '深色' : '淺色'}）`;
+}
+$('#themePick').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (b) window.SBTheme.set(b.dataset.v);
+});
+addEventListener('sb-themechange', renderTheme);
+renderTheme();

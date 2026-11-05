@@ -6,32 +6,40 @@ const send = (type, payload = {}) =>
 
 const PLATFORM_LABEL = { hivebee: 'HiveBee', youtube: 'YouTube', twitch: 'Twitch', manual: '其他' };
 
-function bar(spent, limit, lvl) {
+function meter(spent, limit, lvl) {
   const pct = limit ? Math.min(100, (spent / limit) * 100) : 0;
-  return `<div class="bar ${lvl}"><div style="width:${pct}%"></div></div>`;
+  return `<div class="meter ${lvl}" role="progressbar" aria-valuemin="0" aria-valuemax="${limit}" aria-valuenow="${spent}"><span style="width:${pct}%"></span></div>`;
 }
+const fmt = (n) => Math.round(n).toLocaleString('zh-TW');
+const STATUS = { warn: '接近上限', over: '超過上限' };
+const status = (lvl) => (STATUS[lvl] ? `<span class="status ${lvl}">${STATUS[lvl]}</span>` : '');
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 async function render() {
   const s = await send('getSummary', { month: $('#month').value });
 
+  const left = s.totalLimit - s.total;
   $('#total').innerHTML = `
-    <div class="row"><span class="name">本月總額</span><span>NT$${s.total} / ${s.totalLimit}</span></div>
-    ${bar(s.total, s.totalLimit, s.totalLevel)}
-    <div class="sub">剩餘 NT$${Math.max(0, s.totalLimit - s.total)}・共 ${s.count} 筆</div>`;
+    <div class="k"><span>本月總額</span>${status(s.totalLevel)}</div>
+    <div class="v num"><b>NT$${fmt(s.total)}</b><span>/ ${fmt(s.totalLimit)}</span></div>
+    ${meter(s.total, s.totalLimit, s.totalLevel)}
+    <div class="d"><span>${left >= 0 ? `剩餘 NT$${fmt(left)}` : `超出 NT$${fmt(-left)}`}</span><span>共 ${s.count} 筆</span></div>`;
 
-  $('#streamers').innerHTML = s.streamers.map((x) => `
-    <div class="card">
-      <div class="row"><span class="name">${esc(x.name)}</span><span>NT$${x.spent} / ${x.limit}</span></div>
-      ${bar(x.spent, x.limit, x.level)}
-      <div class="sub">${Object.entries(x.byPlatform).map(([p, v]) => `${PLATFORM_LABEL[p] || p} ${v}`).join('・') || '本月尚無紀錄'}</div>
-    </div>`).join('');
+  // 花最多的排前面；本月還沒花的淡化、不畫進度條
+  const list = [...s.streamers].sort((a, b) => b.spent - a.spent || a.name.localeCompare(b.name));
+  $('#streamerCount').textContent = `${list.filter((x) => x.spent).length} / ${list.length} 位有花費`;
+  $('#streamers').innerHTML = list.map((x) => `
+    <li class="${x.spent ? '' : 'zero'}">
+      <div class="row"><span class="name">${esc(x.name)}</span>${status(x.level)}<span class="amt num"><b>${fmt(x.spent)}</b> / ${fmt(x.limit)}</span></div>
+      ${meter(x.spent, x.limit, x.level)}
+      ${x.spent ? `<div class="plat">${Object.entries(x.byPlatform).map(([p, v]) => `${PLATFORM_LABEL[p] || p} ${fmt(v)}`).join('・')}</div>` : ''}
+    </li>`).join('') || '<li class="empty">還沒有設定直播主</li>';
 
-  $('#unmatchedCount').textContent = s.unmatched.length ? `(${s.unmatched.length})` : '';
+  $('#unmatchedCount').textContent = s.unmatched.length || '';
   $('#unmatched').innerHTML = s.unmatched
-    .map((u) => `<li>${PLATFORM_LABEL[u.platform] || u.platform}：${esc(u.channel || '(無名稱)')} — NT$${u.spent}</li>`).join('')
-    || '<li class="sub">無</li>';
+    .map((u) => `<li><span class="chip">${PLATFORM_LABEL[u.platform] || u.platform}</span><span class="ch">${esc(u.channel || '(無名稱)')}</span><span class="amt num">NT$${fmt(u.spent)}</span></li>`).join('')
+    || '<li class="muted">沒有未對應的頻道</li>';
 
   $('#manualStreamer').innerHTML = s.streamers.map((x) => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
 }
@@ -59,7 +67,7 @@ $('#manual').addEventListener('submit', async (e) => {
   render();
 });
 
-$('#openStats').addEventListener('click', (e) => { e.preventDefault(); chrome.tabs.create({ url: chrome.runtime.getURL('stats/stats.html') }); });
-$('#openOptions').addEventListener('click', (e) => { e.preventDefault(); chrome.runtime.openOptionsPage(); });
+$('#openStats').addEventListener('click', () => { chrome.tabs.create({ url: chrome.runtime.getURL('stats/stats.html') }); });
+$('#openOptions').addEventListener('click', () => { chrome.runtime.openOptionsPage(); });
 
 render();

@@ -436,7 +436,8 @@ $('#showTable').addEventListener('click', (e) => {
   e.currentTarget.setAttribute('aria-pressed', String(state.table));
   $('#trendTable').hidden = !state.table;
 });
-matchMedia('(prefers-color-scheme: light)').addEventListener('change', render);
+// 深淺色改變（使用者切換、其他頁面切換、系統配色改變）時，用新色票重畫圖表（ui/theme.js 發出事件）
+addEventListener('sb-themechange', () => render());
 // 其他分頁（例如匯入過去紀錄）更新資料時跟著重畫；短時間大量更新只重畫一次
 let pending;
 chrome.storage.onChanged.addListener((ch) => {

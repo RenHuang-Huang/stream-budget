@@ -19,10 +19,11 @@
 | `src/content/hivebee-donate.js` | 🧪 HiveBee 贊助頁（`/{實況主}/donate`）的送出前提醒 |
 | `src/content/youtube.js` | 直播頁顯示本月狀態 |
 | `src/content/twitch.js`、`twitch-main.js` | ✅ Twitch 錢包：付款紀錄（訂閱、贈訂）、Bits 使用紀錄（Cheering、Power-ups） |
-| `popup/` | 本月總覽、未對應頻道、手動新增、開啟圖表 |
-| `stats/`、`src/lib/stats.js` | 統計儀表板（深色優先，依 ui-ux-pro-max 建議）：指標卡＋走勢線、每月趨勢面積圖、直播主預算進度、各平台堆疊長條、依直播主／平台環圈圖、每日花費日曆熱力圖、最近交易、表格檢視 |
+| `ui/` | 三個頁面共用的配色（深淺兩組色票）與元件；`theme.js` 處理深淺色：預設跟隨系統，可在設定頁選「跟隨系統／淺色／深色」，彈出視窗與圖表頁右上角有切換鈕（依 modern-web-guidance 的 dark-mode-toggle 做法） |
+| `popup/` | 本月總覽（總額、各直播主進度與狀態）、未對應頻道、手動新增、開啟圖表／設定 |
+| `stats/`、`src/lib/stats.js` | 統計儀表板（依 ui-ux-pro-max 建議）：指標卡＋走勢線、每月趨勢面積圖、直播主預算進度、各平台堆疊長條、依直播主／平台環圈圖、每日花費日曆熱力圖、最近交易、表格檢視 |
 | `vendor/` | Chart.js 4.4.1、D3 7.8.5（MIT，擴充功能不能從 CDN 載入，所以放本地） |
-| `options/` | 上限、別名、Bits 匯率、匯出入 |
+| `options/` | 左側導覽的設定頁：匯入過去紀錄、自動更新、上限與匯率、直播主別名、Google 付款資料、外觀、資料匯出入；有未儲存的變更時底部提示 |
 
 ## 對應規則
 未設定的頻道會自動對應（`src/lib/automatch.js`，選項頁可關閉）：頻道名稱拆成片段（中日韓文字一段、英文一段，去掉 ch／official／頻道等常見字），有共同片段的頻道跨平台歸成同一人；和既有直播主重疊就補別名，否則新增標示「自動」的直播主。刪除自動直播主後該頻道列入 `autoMatchIgnore` 不再建立。沒有頻道名稱的紀錄（網頁付的「YouTube 超級留言」、Google Play 的 Twitch 贈訂）無法自動對應。

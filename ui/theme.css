@@ -1,0 +1,181 @@
+/* 三個頁面（彈出視窗、設定、每月圖表）共用的主題與元件。
+   設計方向（ui-ux-pro-max）：資料密集、卡片分區、等寬數字、150–200ms 過渡、SVG 圖示不用 emoji。
+   資料色：dataviz 預設色盤，分別對深淺兩種 surface 驗證過。
+
+   深淺色（依 modern-web-guidance dark-mode / dark-mode-toggle）：
+   - 預設跟隨系統：<meta name="color-scheme" content="light dark">
+   - 使用者選了淺色／深色時，theme.js 把 meta 改成 "light" / "dark"，下面用 :has() 對回 CSS
+   - 色票用「選擇器分兩組」而不是 light-dark()：統計頁要用 getPropertyValue 把顏色交給 Chart.js，
+     light-dark() 放在自訂屬性裡讀出來是原字串，Chart.js 看不懂 */
+
+:root {
+  color-scheme: light dark;
+
+  /* 淺色 */
+  --page: #f3f5fa;
+  --surface-1: #ffffff;
+  --surface-2: #f7f8fc;
+  --field: #ffffff;
+  --border: #e2e6f0;
+  --border-strong: #cfd5e4;
+  --grid: #edf0f6;
+  --text-primary: #141a2e;
+  --text-secondary: #4b5371;
+  --text-muted: #6c7493;
+  --accent: #2a78d6;
+  --accent-ink: #ffffff;
+  --ink-series: #141a2e;
+  --other: #a5abc0;
+  --good: #0e8a5f; --warn: #b77800; --crit: #d03b3b;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+  --series-4: #eda100; --series-5: #e87ba4; --series-6: #6250d6;
+  --heat-0: #edf0f6; --heat-1: #b7d3f6; --heat-2: #6da7ec; --heat-3: #2a78d6; --heat-4: #184f95;
+  --shadow: 0 1px 2px rgb(20 26 46 / .04), 0 8px 24px rgb(20 26 46 / .06);
+  --shadow-pop: 0 8px 24px rgb(20 26 46 / .14);
+
+  --font: system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  --mono: ui-monospace, "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+  --radius: 16px;
+  --radius-sm: 10px;
+
+  &:has(> head > meta[name="color-scheme"][content="light"]) { color-scheme: light; }
+  &:has(> head > meta[name="color-scheme"][content="dark"]) { color-scheme: dark; }
+}
+
+/* 深色：系統是深色且沒被指定成淺色，或使用者指定深色（兩組內容相同） */
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) {
+    --page: #0a0f1f;
+    --surface-1: #121a33;
+    --surface-2: #18213f;
+    --field: #0e1530;
+    --border: #222c52;
+    --border-strong: #2f3a66;
+    --grid: #1d2647;
+    --text-primary: #e8ebf5;
+    --text-secondary: #a3abc8;
+    --text-muted: #7a84ab;
+    --accent: #3987e5;
+    --ink-series: #e8ebf5;
+    --other: #5a6386;
+    --good: #1baf7a; --warn: #e3a008; --crit: #f05252;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+    --series-4: #c98500; --series-5: #d55181; --series-6: #9085e9;
+    --heat-0: #1a2344; --heat-1: #104281; --heat-2: #1c5cab; --heat-3: #3987e5; --heat-4: #86b6ef;
+    --shadow: 0 1px 0 rgb(255 255 255 / .03) inset, 0 8px 24px rgb(0 0 0 / .25);
+    --shadow-pop: 0 8px 24px rgb(0 0 0 / .4);
+  }
+}
+:root:has(> head > meta[name="color-scheme"][content="dark"]) {
+  --page: #0a0f1f;
+  --surface-1: #121a33;
+  --surface-2: #18213f;
+  --field: #0e1530;
+  --border: #222c52;
+  --border-strong: #2f3a66;
+  --grid: #1d2647;
+  --text-primary: #e8ebf5;
+  --text-secondary: #a3abc8;
+  --text-muted: #7a84ab;
+  --accent: #3987e5;
+  --ink-series: #e8ebf5;
+  --other: #5a6386;
+  --good: #1baf7a; --warn: #e3a008; --crit: #f05252;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+  --series-4: #c98500; --series-5: #d55181; --series-6: #9085e9;
+  --heat-0: #1a2344; --heat-1: #104281; --heat-2: #1c5cab; --heat-3: #3987e5; --heat-4: #86b6ef;
+  --shadow: 0 1px 0 rgb(255 255 255 / .03) inset, 0 8px 24px rgb(0 0 0 / .25);
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / .4);
+}
+
+/* ── 基本 ── */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page); color: var(--text-primary);
+  font: 14px/1.55 var(--font); -webkit-font-smoothing: antialiased;
+  transition: background-color .2s, color .2s;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+[hidden] { display: none !important; }
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ── 品牌圖示 ── */
+.logo { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); flex: none; }
+.logo svg.i { width: 20px; height: 20px; }
+
+/* ── 卡片 ── */
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+/* ── 按鈕 ── */
+.btn { display: inline-flex; gap: 8px; align-items: center; justify-content: center; height: 38px; padding: 0 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-primary); transition: border-color .15s, background .15s, opacity .15s; white-space: nowrap; text-decoration: none; }
+.btn:hover:not(:disabled) { border-color: var(--accent); text-decoration: none; }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 86%, #fff); }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 45%, var(--border)); background: transparent; }
+.btn.danger:hover { border-color: var(--crit); background: color-mix(in srgb, var(--crit) 10%, transparent); }
+.btn.danger[data-armed] { background: var(--crit); color: #fff; border-color: var(--crit); }
+.btn.sm { height: 32px; padding: 0 10px; font-size: 13px; }
+
+/* 圖示按鈕（主題切換等） */
+.icon-btn { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); transition: border-color .15s, color .15s, background .15s; }
+.icon-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.icon-btn.sm { width: 32px; height: 32px; }
+
+/* ── 輸入框（外框＋前後單位） ── */
+.control { display: flex; align-items: center; height: 38px; border-radius: var(--radius-sm); background: var(--field); border: 1px solid var(--border-strong); transition: border-color .15s, box-shadow .15s; }
+.control:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.control input, .control select { flex: 1 1 0; width: 0; min-width: 0; height: 100%; border: 0; background: transparent; padding: 0 12px; outline: none; }
+.control select { cursor: pointer; padding-right: 4px; }
+.control select option { background: var(--surface-1); color: var(--text-primary); }
+.control .pre, .control .suf { color: var(--text-muted); font-size: 12.5px; padding: 0 10px; white-space: nowrap; }
+.control .pre { padding-right: 0; }
+.control .suf { padding-left: 0; }
+.control input[type=number] { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.control input[type=number]::-webkit-inner-spin-button { opacity: .4; }
+.control.sm { height: 32px; font-size: 13px; }
+
+/* ── 分段選擇 ── */
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--radius-sm); background: var(--surface-1); border: 1px solid var(--border); }
+.seg button { display: inline-flex; gap: 6px; align-items: center; border: 0; background: transparent; color: var(--text-secondary); padding: 6px 12px; border-radius: 7px; transition: background .18s, color .18s; }
+.seg button:hover { color: var(--text-primary); }
+.seg button[aria-checked="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* ── 開關 ── */
+.switch { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; user-select: none; }
+.switch input { appearance: none; width: 36px; height: 20px; border-radius: 999px; background: var(--border-strong); position: relative; margin: 0; cursor: pointer; transition: background .18s; flex: none; }
+.switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .18s; box-shadow: 0 1px 2px rgb(0 0 0 / .3); }
+.switch input:checked { background: var(--accent); }
+.switch input:checked::after { transform: translateX(16px); }
+
+/* ── 預算進度條與狀態標籤 ── */
+.meter { height: 8px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+.meter > span { display: block; height: 100%; border-radius: 4px; background: var(--accent); transition: width .4s ease; }
+.meter.warn > span { background: var(--warn); }
+.meter.over > span { background: var(--crit); }
+.status { font-size: 11px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; font-weight: 600; }
+.status.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.status.over { color: var(--crit); background: color-mix(in srgb, var(--crit) 14%, transparent); }
+
+/* ── 主題切換鈕：太陽／月亮依「目前顯示的」配色切換（不靠 JS 也正確） ── */
+.theme-toggle .to-light { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-toggle .to-dark { display: none; }
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-toggle .to-light { display: inline; }
+}
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle .to-dark { display: none; }
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle .to-light { display: inline; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  html { scroll-behavior: auto !important; }
+}

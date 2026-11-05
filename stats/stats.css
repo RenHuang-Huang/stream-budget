@@ -1,55 +1,8 @@
-/* 設計方向（ui-ux-pro-max）：深色優先、資料密集型儀表板；數字用等寬字、懸停 150–250ms 過渡、SVG 圖示不用 emoji。
+/* 每月圖表：配色（深淺兩組）與共用元件在 ../ui/theme.css。
+   設計方向（ui-ux-pro-max）：資料密集型儀表板；數字用等寬字、懸停 150–250ms 過渡、SVG 圖示不用 emoji。
    資料色：dataviz 預設色盤，已對兩種 surface 驗證（dark #121a33 全 PASS；light #ffffff 三色 < 3:1 → 圖例附數值＋表格檢視）。 */
-.viz-root {
-  color-scheme: dark;
-  --page: #0a0f1f;
-  --surface-1: #121a33;
-  --surface-2: #18213f;
-  --border: #222c52;
-  --grid: #1d2647;
-  --text-primary: #e8ebf5;
-  --text-secondary: #a3abc8;
-  --text-muted: #6e78a0;
-  --accent: #3987e5;
-  --ink-series: #e8ebf5;
-  --other: #5a6386;
-  --good: #1baf7a; --warn: #e3a008; --crit: #f05252;
-  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
-  --series-4: #c98500; --series-5: #d55181; --series-6: #9085e9;
-  --heat-0: #1a2344; --heat-1: #104281; --heat-2: #1c5cab; --heat-3: #3987e5; --heat-4: #86b6ef;
-  --shadow: 0 1px 0 rgb(255 255 255 / .03) inset, 0 8px 24px rgb(0 0 0 / .25);
-}
-@media (prefers-color-scheme: light) {
-  .viz-root {
-    color-scheme: light;
-    --page: #f3f5fa;
-    --surface-1: #ffffff;
-    --surface-2: #f7f8fc;
-    --border: #e2e6f0;
-    --grid: #edf0f6;
-    --text-primary: #141a2e;
-    --text-secondary: #4b5371;
-    --text-muted: #7c84a3;
-    --accent: #2a78d6;
-    --ink-series: #141a2e;
-    --other: #a5abc0;
-    --good: #0e8a5f; --warn: #b77800; --crit: #d03b3b;
-    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
-    --series-4: #eda100; --series-5: #e87ba4; --series-6: #6250d6;
-    --heat-0: #edf0f6; --heat-1: #b7d3f6; --heat-2: #6da7ec; --heat-3: #2a78d6; --heat-4: #184f95;
-    --shadow: 0 1px 2px rgb(20 26 46 / .04), 0 8px 24px rgb(20 26 46 / .06);
-  }
-}
-
-* { box-sizing: border-box; }
-html, body { margin: 0; }
-body { font: 14px/1.5 system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; -webkit-font-smoothing: antialiased; }
 .viz-root { min-height: 100vh; background: var(--page); color: var(--text-primary); padding: 28px clamp(16px, 3vw, 40px) 56px; }
 .viz-root > * { max-width: 1320px; margin-inline: auto; }
-.num { font-family: ui-monospace, "SF Mono", "Fira Code", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-button, select { font: inherit; color: inherit; }
-button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 
 /* ── 頂部 ── */
 .top { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; justify-content: space-between; margin-bottom: 20px; }
