@@ -1,5 +1,6 @@
 import { DEFAULT_SETTINGS, summarize, monthKey, newAlerts, toTWD, previewSpend } from './lib/budget.js';
 import { autoMatch } from './lib/automatch.js';
+import { backfillUrls, isTabDoneKey, connectables, contentScriptsOf } from './lib/platforms.js';
 
 const get = (keys) => chrome.storage.local.get(keys);
 const set = (obj) => chrome.storage.local.set(obj);
@@ -91,13 +92,6 @@ async function runAutoMatch(records, { force = false } = {}) {
 // ── 匯入過去紀錄 ──
 // 開背景分頁到各平台的紀錄頁，由各頁的 content script 自動翻頁；進度記在 storage.backfill
 const BACKFILL_TTL = 30 * 60 * 1000; // 超過 30 分鐘視為結束（例如分頁被關掉、沒登入卡住）
-const BACKFILL_URLS = [
-  'https://www.hivebee.com.tw/member/history?tab=sponsorship',
-  'https://www.hivebee.com.tw/member/history?tab=subscription',
-  'https://pay.google.com/gp/w/home/activity',
-  'https://www.twitch.tv/wallet?tab=purchase-history',
-  'https://www.twitch.tv/wallet?tab=bits-usage-history',
-];
 
 async function getBackfill() {
   const { backfill } = await get('backfill');
@@ -119,15 +113,51 @@ async function startBackfill({ months = 6, since, kind = 'backfill', windowId, i
   }
   const backfill = { kind, months, since, startedAt: Date.now(), tabIds: [], progress: {} };
   await set({ backfill, ...(kind === 'backfill' ? { setupDone: true } : {}) });
-  for (const [i, url] of BACKFILL_URLS.entries()) {
+  // 只開使用者有連結的平台的紀錄頁（見 lib/platforms.js）
+  const urls = backfillUrls(await activeConnections());
+  for (const [i, url] of urls.entries()) {
     const opts = { url, active: false };
     if (windowId != null) Object.assign(opts, { windowId }, index != null ? { index: index + 1 + i } : {});
     const tab = await chrome.tabs.create(opts).catch(() => chrome.tabs.create({ url, active: false }));
     backfill.tabIds.push(tab.id);
     await set({ backfill }); // 每開一個就存，分頁載入後問 getBackfill 時才認得自己
   }
+  if (!urls.length) { backfill.finishedAt = Date.now(); await set({ backfill }); }
   return backfill;
 }
+
+// ── 連結平台 ──
+// 使用者在設定頁勾選並授權網站存取後，才註冊該平台的 content scripts；沒連結的網站完全不碰。
+// 實際生效 = 設定裡勾選 && 網站權限還在（使用者可能從 chrome://extensions 收回權限）。
+async function activeConnections() {
+  const { connected = {} } = await getSettings();
+  const out = {};
+  for (const item of connectables())
+    if (connected[item.key] && (await chrome.permissions.contains({ origins: item.connect.origins }))) out[item.key] = true;
+  return out;
+}
+
+async function syncConnections() {
+  const active = await activeConnections();
+  const want = connectables().filter((item) => active[item.key]).flatMap(contentScriptsOf);
+  const have = await chrome.scripting.getRegisteredContentScripts();
+  if (have.length) await chrome.scripting.unregisterContentScripts({ ids: have.map((x) => x.id) });
+  if (want.length) await chrome.scripting.registerContentScripts(want);
+  return active;
+}
+
+/** 舊版（網站存取寫死在 manifest）升級上來：權限還在的平台視為已連結 */
+async function migrateConnections() {
+  const settings = await getSettings();
+  if (settings.connected) return;
+  const connected = {};
+  for (const item of connectables())
+    if (await chrome.permissions.contains({ origins: item.connect.origins })) connected[item.key] = true;
+  await set({ settings: { ...settings, connected } });
+}
+
+chrome.permissions.onAdded.addListener(() => serial(syncConnections));
+chrome.permissions.onRemoved.addListener(() => serial(syncConnections));
 
 // ── 自動更新 ──
 // 每 15 分鐘檢查一次是否到期（設定的間隔）；到期了也要「使用者正開著 HiveBee／YouTube／Twitch 任一頁面」才跑，
@@ -182,9 +212,9 @@ async function backfillDone({ key }, sender) {
   const { backfill } = await get('backfill');
   if (!backfill) return null;
   backfill.progress[key] = { ...backfill.progress[key], done: true, at: Date.now() };
-  // HiveBee／Twitch 一個分頁一個 key；Google 分頁要等全部付款資料做完（key = 'gpay'）才關
+  // 平台的紀錄頁一個分頁一個 key（例如 hivebee:sponsorship）；Google 分頁要等全部付款資料做完（key = 'gpay'）才關
   const tabId = sender?.tab?.id;
-  if (tabId != null && backfill.tabIds.includes(tabId) && (key.startsWith('hivebee:') || key.startsWith('twitch:') || key === 'gpay')) {
+  if (tabId != null && backfill.tabIds.includes(tabId) && isTabDoneKey(key)) {
     backfill.tabIds = backfill.tabIds.filter((id) => id !== tabId);
     chrome.tabs.remove(tabId).catch(() => {});
   }
@@ -242,7 +272,19 @@ const handlers = {
     return previewSpend(summary, settings, platform, channel, toTWD({ amount, currency }, settings));
   },
   getSettings: () => getSettings(),
-  saveSettings: ({ settings }) => serial(async () => { await set({ settings }); return refreshBadgeAndAlerts(); }),
+  getConnections: () => activeConnections(),
+  // 設定頁已經先向使用者要到（或收回）網站權限，這裡只記下勾選狀態並重新註冊
+  setConnected: ({ key, on }) => serial(async () => {
+    const settings = await getSettings();
+    await set({ settings: { ...settings, connected: { ...settings.connected, [key]: !!on } } });
+    return syncConnections();
+  }),
+  // 連結狀態只由 setConnected 改，避免設定頁手上的舊設定蓋掉
+  saveSettings: ({ settings }) => serial(async () => {
+    const { connected } = await getSettings();
+    await set({ settings: { ...settings, connected } });
+    return refreshBadgeAndAlerts();
+  }),
   getRecords: async ({ month }) => {
     const all = Object.values(await getRecords());
     return (month ? all.filter((r) => monthKey(r.time) === month) : all).sort((a, b) => b.time.localeCompare(a.time));
@@ -255,7 +297,7 @@ const handlers = {
     await set({ records });
     return refreshBadgeAndAlerts();
   },
-  importData: async ({ data }) => { await set(data); return refreshBadgeAndAlerts(); },
+  importData: async ({ data }) => { await set(data); await serial(syncConnections); return refreshBadgeAndAlerts(); },
   exportData: () => get(['settings', 'records']),
   clearRecords: async () => { await set({ records: {}, alertsSent: [] }); return refreshBadgeAndAlerts(); },
 };
@@ -272,6 +314,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   const { settings } = await get('settings');
   if (!settings) await set({ settings: DEFAULT_SETTINGS });
+  else if (reason === 'update') await migrateConnections();
+  await serial(syncConnections);
   await serial(dropBadHints);
   await serial(() => runAutoMatch()); // 安裝／更新後，把既有紀錄裡的未對應頻道也對應一次
   await refreshBadgeAndAlerts();
@@ -279,7 +323,7 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason === 'install') chrome.runtime.openOptionsPage();
 });
 
-chrome.runtime.onStartup.addListener(refreshBadgeAndAlerts);
+chrome.runtime.onStartup.addListener(async () => { await serial(syncConnections); await refreshBadgeAndAlerts(); });
 
 // 0.1.0 的 ytchat.js 會把「傳送超級留言」面板裡的預覽卡當成已送出，而且每秒記一筆
 // （預覽卡沒有訊息 ID，退而用「金額|現在時間」當 key）。真的訊息一定有 ID，key 不含「|」。

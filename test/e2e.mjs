@@ -2,11 +2,13 @@
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 import { readFileSync, mkdtempSync } from 'node:fs';
+import { makeTestExtension, connectAll } from './test-extension.mjs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const root = path.resolve(import.meta.dirname, '..');
+const ext = makeTestExtension();
 const fixtures = {
   sponsorship: readFileSync(path.join(root, 'test/fixtures/hivebee-sponsorship.html'), 'utf8'),
   subscription: readFileSync(path.join(root, 'test/fixtures/hivebee-subscription.html'), 'utf8'),
@@ -14,12 +16,19 @@ const fixtures = {
 const ctx = await chromium.launchPersistentContext(mkdtempSync(path.join(tmpdir(), 'sb-')), {
   channel: 'chromium',
   timezoneId: 'Asia/Taipei',
-  args: [`--disable-extensions-except=${root}`, `--load-extension=${root}`],
+  args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
 });
 try {
   let [sw] = ctx.serviceWorkers();
   sw ??= await ctx.waitForEvent('serviceworker');
   const extId = new URL(sw.url()).host;
+
+  // 先在設定頁連結 HiveBee（沒連結的平台不會註冊 content script）
+  const opts = await ctx.newPage();
+  await opts.goto(`chrome-extension://${extId}/options/options.html`);
+  await connectAll(opts, ['hivebee']);
+  const registered = await opts.evaluate(() => chrome.runtime.sendMessage({ type: 'getConnections' }));
+  assert.deepEqual(registered.data, { hivebee: true });
 
   await ctx.route('https://www.hivebee.com.tw/**', (r) => {
     const tab = new URL(r.request().url()).searchParams.get('tab');
@@ -39,7 +48,7 @@ try {
   const popup = await ctx.newPage();
   await popup.setViewportSize({ width: 360, height: 600 });
   await popup.goto(`chrome-extension://${extId}/popup/popup.html`);
-  await popup.waitForSelector('#streamers .card');
+  await popup.waitForSelector('#streamers li');
   await popup.locator('#unmatchedBox').evaluate((d) => (d.open = true));
   const nov = await popup.evaluate(() => chrome.runtime.sendMessage({ type: 'getSummary', month: '2026-11' }));
   const oct = await popup.evaluate(() => chrome.runtime.sendMessage({ type: 'getSummary', month: '2026-10' }));

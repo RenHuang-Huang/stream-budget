@@ -1,6 +1,7 @@
 // 斗內統計儀表板：Chart.js（趨勢、堆疊長條、環圈）＋ D3（日曆熱力圖）
 // Chart / d3 由 ../vendor/ 的 UMD 檔以全域變數提供（擴充功能頁不能從 CDN 載入程式）
-import { monthsBack, buildStats, lineSeries, recipientsOf, platformsOf, dailyTotals, recentRecords, PLATFORM_LABEL } from '../src/lib/stats.js';
+import { monthsBack, buildStats, lineSeries, recipientsOf, platformsOf, dailyTotals, recentRecords } from '../src/lib/stats.js';
+import { PLATFORMS, platformLabel, platformColor } from '../src/lib/platforms.js';
 import { level } from '../src/lib/budget.js';
 import { localDate } from '../src/lib/gpay.js';
 
@@ -16,8 +17,6 @@ const css = (v) => getComputedStyle(root).getPropertyValue(v).trim();
 const send = (type, payload = {}) =>
   chrome.runtime.sendMessage({ type, ...payload }).then((r) => (r?.ok ? r.data : Promise.reject(r?.error)));
 
-const PLATFORMS = ['hivebee', 'youtube', 'twitch', 'manual'];
-const PLATFORM_VAR = { hivebee: '--series-1', youtube: '--series-2', twitch: '--series-3', manual: '--series-4' };
 const KIND_LABEL = {
   superchat: 'Super Chat', membership: '會員', 'gift-membership': '贈送會員', jewels: '寶石', 'gift-sub': '贈訂', sub: '訂閱',
 };
@@ -188,9 +187,11 @@ function renderTrend(stats) {
 // ───────────── 直播主預算進度 ─────────────
 function renderMeters(sum) {
   $('#budgetSub').textContent = `${monthLong(state.month)}・依上限比例排序`;
-  const list = [...sum.streamers].sort((a, b) => b.spent / (b.limit || 1) - a.spent / (a.limit || 1));
+  // 只列這個月有花費的
+  const list = sum.streamers.filter((s) => s.spent).sort((a, b) => b.spent / (b.limit || 1) - a.spent / (a.limit || 1));
+  const more = sum.unmatched.length ? `<li class="more">另有 ${sum.unmatched.length} 個未對應頻道，共 ${money(sum.unmatched.reduce((a, u) => a + u.spent, 0))}（到選項頁設定別名）</li>` : '';
   if (!list.length) {
-    $('#meters').innerHTML = '<li class="empty">尚未設定直播主，到「選項」新增</li>';
+    $('#meters').innerHTML = `<li class="empty">${sum.streamers.length ? '這個月還沒有花費' : '尚未設定直播主，到「選項」新增'}</li>` + more;
     return;
   }
   $('#meters').innerHTML =
@@ -200,22 +201,22 @@ function renderMeters(sum) {
       return `<li><div class="row"><span class="name"><i class="sw" style="background:${colorOf(`s:${s.id}`)}"></i><span>${esc(s.name)}</span>${badge}</span>
         <span class="amt num">${money(s.spent)} / ${short(s.limit)}</span></div>
         <div class="bar ${s.level}"><span style="width:${pct}%"></span></div></li>`;
-    }).join('') +
-    (sum.unmatched.length ? `<li class="more">另有 ${sum.unmatched.length} 個未對應頻道，共 ${money(sum.unmatched.reduce((a, u) => a + u.spent, 0))}（到選項頁設定別名）</li>` : '');
+    }).join('') + more;
 }
 
 // ───────────── 各平台堆疊長條 ─────────────
 function renderPlatBars(stats) {
   const per = stats.summaries.map((s) => Object.fromEntries(platformsOf(s).map((p) => [p.key.slice(2), p.spent])));
-  const used = PLATFORMS.filter((p) => per.some((x) => x[p]));
+  const used = PLATFORMS.map((p) => p.key).filter((p) => per.some((x) => x[p]));
+  $('#platBarsSub').textContent = (used.length ? used : PLATFORMS.map((p) => p.key)).map(platformLabel).join('／');
   remake('platBars', {
     type: 'bar',
     data: {
       labels: stats.months.map(monthShort),
       datasets: used.map((p) => ({
-        label: PLATFORM_LABEL[p],
+        label: platformLabel(p),
         data: per.map((x) => x[p] || 0),
-        backgroundColor: css(PLATFORM_VAR[p]),
+        backgroundColor: css(platformColor(p)),
         borderColor: css('--surface-1'),
         borderWidth: { top: 2 },
         borderRadius: 4,
@@ -327,7 +328,7 @@ function renderDonuts(sum) {
 
   const plats = platformsOf(sum);
   $('#platSub').textContent = monthLong(state.month);
-  renderDonut('platDonut', $('#platList'), plats, (it) => css(PLATFORM_VAR[it.key.slice(2)] || '--other'));
+  renderDonut('platDonut', $('#platList'), plats, (it) => css(platformColor(it.key.slice(2))));
 }
 
 // ───────────── 日曆熱力圖（D3）─────────────
@@ -387,7 +388,7 @@ function renderRecent() {
   $('#recent').innerHTML = list.length
     ? list.map((r) => {
         const d = new Date(r.time);
-        const plat = `<span class="chip" style="color:${css(PLATFORM_VAR[r.platform] || '--other')}">${esc(PLATFORM_LABEL[r.platform] || r.platform)}</span>`;
+        const plat = `<span class="chip" style="color:${css(platformColor(r.platform))}">${esc(platformLabel(r.platform))}</span>`;
         const kind = KIND_LABEL[r.kind] || r.kind || '';
         return `<li><span class="date num">${d.getMonth() + 1}/${d.getDate()}</span>
           <span class="who"><b title="${esc(r.who)}">${esc(r.who)}</b><small>${plat}${esc(kind)}${r.matched ? '' : '・未對應'}</small></span>

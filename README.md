@@ -10,6 +10,7 @@
 ## 結構
 | 檔案 | 說明 |
 |---|---|
+| `src/lib/platforms.js` | 平台登錄檔：名稱、顏色、別名欄、手動新增選項、匯入時要開的紀錄頁。介面與背景都從這裡讀，不另外寫死平台清單 |
 | `src/lib/budget.js` | 純邏輯：別名對應、月份彙總、上限判斷、通知門檻 |
 | `src/background.js` | 存資料（chrome.storage.local）、徽章%、超額通知 |
 | `src/content/common.js` | 內容腳本共用：送資料、右下角狀態條 |
@@ -28,13 +29,19 @@
 ## 對應規則
 未設定的頻道會自動對應（`src/lib/automatch.js`，選項頁可關閉）：頻道名稱拆成片段（中日韓文字一段、英文一段，去掉 ch／official／頻道等常見字），有共同片段的頻道跨平台歸成同一人；和既有直播主重疊就補別名，否則新增標示「自動」的直播主。刪除自動直播主後該頻道列入 `autoMatchIgnore` 不再建立。沒有頻道名稱的紀錄（網頁付的「YouTube 超級留言」、Google Play 的 Twitch 贈訂）無法自動對應。
 
-直播主可在三個平台各設別名，交易的頻道名稱「包含」別名即計入（忽略大小寫、符號、emoji）。
+直播主可在每個平台各設別名，交易的頻道名稱「包含」別名即計入（忽略大小寫、符號、emoji）。
 只計入付款狀態為「成功／完成」的紀錄，以交易單號去重。
+
+## 文件
+- [使用教學](docs/使用教學.md)：安裝、連結平台、設定上限與直播主、各頁面說明（圖文）
+- [新增平台](docs/新增平台.md)：加入新斗內平台的步驟，以及預計加入的綠界、StreamBox、歐付寶、山羌、應援科技
+
+教學截圖用虛構資料自動產生：`npm run docs:shots`。
 
 ## 測試
 ```
 npm test          # 單元測試
-npm run e2e       # 在 Chromium 載入 extension，用 fixture 模擬 HiveBee 頁面
+npm run e2e       # 在 Chromium 載入 extension（測試版直接給網站權限），連結 HiveBee 後用 fixture 模擬頁面
 ```
 
 ## 待辦

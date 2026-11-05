@@ -1,7 +1,6 @@
 // 純函式：不碰 chrome.*，方便用 node --test 測試
 import { resolveHints } from './gpay.js';
 
-export const PLATFORMS = ['hivebee', 'youtube', 'twitch', 'manual'];
 
 export const DEFAULT_SETTINGS = {
   totalLimit: 3000,
@@ -15,9 +14,11 @@ export const DEFAULT_SETTINGS = {
   gpayProfiles: {},
   // 未對應頻道自動對應（見 automatch.js）；autoMatchIgnore 是使用者刪掉的自動直播主的頻道，不再自動建立
   autoMatch: true,
-  // 自動更新間隔（分鐘）：0 關閉、60、360、1440；只在使用者開著 HiveBee／YouTube／Twitch 頁面時才執行
+  // 自動更新間隔（分鐘）：0 關閉、60、360、1440；只在使用者開著已連結平台的頁面時才執行
   syncInterval: 360,
   autoMatchIgnore: [],
+  // 使用者勾選要連結的平台／來源（見 platforms.js 的 connect）：{ hivebee: true, … }；沒勾的網站不讀取
+  connected: {},
   streamers: [
     {
       id: 'cocoro',

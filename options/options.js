@@ -1,8 +1,16 @@
+import { aliasPlatforms, connectables } from '../src/lib/platforms.js';
+
 const $ = (s) => document.querySelector(s);
 const send = (type, payload = {}) =>
   chrome.runtime.sendMessage({ type, ...payload }).then((r) => (r?.ok ? r.data : Promise.reject(r?.error)));
 
-const PLATS = ['hivebee', 'youtube', 'twitch'];
+const PLATS = aliasPlatforms().map((p) => p.key);
+
+// 直播主表格：每個支援別名的平台一欄（平台清單見 src/lib/platforms.js）
+$('#cols').innerHTML = `<col class="c-name"><col class="c-limit">${'<col>'.repeat(PLATS.length)}<col class="c-del">`;
+$('#heads').innerHTML = '<th>名稱</th><th>月上限 NT$</th>' +
+  aliasPlatforms().map((p) => `<th><span class="plat"><i style="background:var(${p.color})"></i>${p.label} 別名</span></th>`).join('') +
+  '<th aria-label="刪除"></th>';
 let settings;
 // 刪掉的「自動」直播主的頻道：儲存時加進 autoMatchIgnore，之後不再自動建立
 const pendingIgnore = new Set();
@@ -176,6 +184,7 @@ async function renderBackfill() {
   const running = bf && !bf.finishedAt && Date.now() - bf.startedAt < 30 * 60 * 1000;
   $('#backfillStart').disabled = !!running;
   $('#backfillStart').textContent = running ? '匯入中…' : '開始匯入';
+  if (!running && !Object.values(connections).some(Boolean)) $('#backfillStart').disabled = true;
   const items = Object.entries(bf?.progress || {}).filter(([k, p]) => k !== 'gpay' && p.label);
   $('#backfillProgress').replaceChildren(
     ...items.map(([, p]) => {
@@ -202,6 +211,39 @@ async function renderBackfill() {
   else if (bf?.finishedAt && !$('#savebar').classList.contains('dirty')) { settings = await send('getSettings'); render(); renderSync(); }
 }
 
+// ── 連結平台 ──
+// 勾選：先向使用者要網站權限（chrome.permissions.request 要在點擊當下呼叫，前面不能有 await），允許後才記下並註冊
+// 取消：收回網站權限。實際狀態以背景回傳的 getConnections 為準（使用者也可能從 chrome://extensions 收回）。
+let connections = {};
+const hostOf = (o) => o.replace(/^https:\/\//, '').replace(/\/\*$/, '');
+function renderConnections() {
+  $('#connectList').replaceChildren(...connectables().map((item) => {
+    const on = !!connections[item.key];
+    const li = document.createElement('li');
+    li.className = on ? 'on' : '';
+    li.innerHTML = `
+      <label class="switch"><input type="checkbox" ${on ? 'checked' : ''} aria-label="連結 ${item.label}"></label>
+      <div><div class="name">${item.color ? `<i style="background:var(${item.color})"></i>` : ''}${item.label}<span class="state">${on ? '已連結' : '未連結'}</span></div>
+      <div class="about">${item.connect.desc}</div></div>
+      <div class="sites">${[...new Set(item.connect.origins.map(hostOf))].join('、')}</div>`;
+    li.querySelector('input').onchange = (e) => toggleConnection(item, e.target.checked, e.target);
+    return li;
+  }));
+  $('#backfillStart').title = Object.values(connections).some(Boolean) ? '' : '請先在上方連結至少一個平台';
+}
+
+function toggleConnection(item, on, input) {
+  const origins = item.connect.origins;
+  const ask = on ? chrome.permissions.request({ origins }) : chrome.permissions.remove({ origins });
+  ask.then(async (ok) => {
+    if (on && !ok) { input.checked = false; return; } // 使用者在 Chrome 的詢問視窗按了拒絕
+    connections = await send('setConnected', { key: item.key, on });
+    renderConnections();
+    renderBackfill();
+  }).catch((e) => { input.checked = !on; alertLine(`連結 ${item.label} 失敗：${e.message || e}`); });
+}
+const alertLine = (msg) => $('#connectList').after(Object.assign(document.createElement('p'), { className: 'hint', role: 'alert', textContent: msg }));
+
 $('#backfillStart').onclick = async () => {
   $('#welcome').hidden = true;
   $('#backfillSkip').hidden = true;
@@ -216,7 +258,10 @@ $('#backfillSkip').onclick = async () => {
 
 settings = await send('getSettings');
 render();
+connections = await send('getConnections');
+renderConnections();
 if (!(await send('getSetupDone'))) {
+  $('#connectWelcome').hidden = Object.values(connections).some(Boolean);
   $('#welcome').hidden = false;
   $('#backfillSkip').hidden = false;
 }

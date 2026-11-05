@@ -2,7 +2,7 @@
 import { summarize, countedRecords, toTWD, matchStreamer } from './budget.js';
 import { localDate } from './gpay.js';
 
-export const PLATFORM_LABEL = { hivebee: 'HiveBee', youtube: 'YouTube', twitch: 'Twitch', manual: '手動' };
+import { platformLabel } from './platforms.js';
 
 /** 往回 n 個月（含本月），舊→新，例如 ['2025-12', …, '2026-11'] */
 export function monthsBack(n, now = new Date()) {
@@ -19,7 +19,7 @@ export function recipientsOf(summary) {
     ...summary.unmatched.map((u) => ({
       key: `u:${u.platform}|${u.channel}`,
       name: `${u.channel || '（未知）'}`,
-      sub: PLATFORM_LABEL[u.platform] || u.platform,
+      sub: platformLabel(u.platform),
       spent: u.spent,
     })),
   ];
@@ -33,7 +33,7 @@ export function platformsOf(summary, records, settings) {
   for (const u of summary.unmatched) out[u.platform] = (out[u.platform] || 0) + u.spent;
   return Object.entries(out)
     .filter(([, v]) => v)
-    .map(([p, spent]) => ({ key: `p:${p}`, name: PLATFORM_LABEL[p] || p, spent }))
+    .map(([p, spent]) => ({ key: `p:${p}`, name: platformLabel(p), spent }))
     .sort((a, b) => b.spent - a.spent);
 }
 
