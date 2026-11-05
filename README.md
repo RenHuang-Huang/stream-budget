@@ -7,6 +7,13 @@
 2. 「載入未封裝項目」→ 選這個資料夾
 3. 改程式碼後在同一頁按 ⟳ 重新載入
 
+## 上架（Chrome 線上應用程式商店，不公開）
+```
+npm run pack         # dist/stream-budget-<version>.zip
+npm run store:shots  # docs/store/ 商店截圖與宣傳圖塊
+```
+送審要填的內容、步驟與從未封裝版搬資料的方法見 [CHROMEWEBSTORE.md](CHROMEWEBSTORE.md)；隱私權政策見 [PRIVACY.md](PRIVACY.md)。
+
 ## 結構
 | 檔案 | 說明 |
 |---|---|

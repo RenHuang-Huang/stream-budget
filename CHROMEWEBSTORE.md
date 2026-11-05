@@ -2,7 +2,7 @@
 
 上架與送審用的資訊。改到 `manifest.json` 的權限、網站存取、說明或資料處理方式時，這份要一起更新。
 
-最後更新：2026-11-05（對應 manifest `version` 0.1.2）
+最後更新：2026-11-06（對應 manifest `version` 0.1.2）
 
 ## 商店資訊
 
@@ -13,6 +13,9 @@
 | 類別 | 生產力工具（Productivity） |
 | 語言 | 中文（台灣） |
 | 圖示 | `icons/icon128.png` |
+| 發布方式（Visibility） | **不公開（Unlisted）**：不會出現在搜尋結果，只有拿到商店連結的人能安裝；仍會審查，裝了之後會自動更新 |
+| 隱私權政策網址 | <https://github.com/RenHuang-Huang/stream-budget/blob/main/PRIVACY.md> |
+| 支援網址 | <https://github.com/RenHuang-Huang/stream-budget/issues> |
 
 ### 詳細說明（草稿）
 
@@ -26,14 +29,14 @@
 - 每月趨勢、平台比例、日曆熱力圖等統計圖表
 - 所有資料只存在你的電腦，不會上傳到任何伺服器
 
-### 商店截圖（待準備，1280×800）
+### 商店圖片
 
-- [ ] 每月圖表頁（可用 `docs/images/08-stats.png` 裁成 1280×800）
-- [ ] 彈出視窗（本月各直播主進度，`docs/images/07-popup.png`）
-- [ ] 選項頁（連結平台、直播主別名，`docs/images/02-connect-on.png`、`05-streamers.png`）
-- [ ] 贊助頁上的送出前提醒（`docs/images/10-guard.png`）
+`npm run store:shots` 從 `docs/images/` 的教學截圖（虛構資料）產生，輸出到 `docs/store/`：
 
-`npm run docs:shots` 會用虛構資料重拍這些畫面。
+- [x] 截圖 1280×800：`screenshot-1-stats.png`（每月圖表）、`screenshot-2-popup.png`（彈出視窗）、`screenshot-3-guard.png`（送出前提醒）、`screenshot-4-connect.png`（連結平台）、`screenshot-5-streamers.png`（直播主對應）
+- [x] 小型宣傳圖塊 440×280：`promo-small-440x280.png`
+
+截圖與圖示都沒有使用 YouTube、Twitch、HiveBee、Google 的 logo；平台名稱只用來描述支援哪些網站。介面改版後先跑 `npm run docs:shots` 再跑 `npm run store:shots`。
 
 ## 單一用途說明
 
@@ -88,9 +91,9 @@
 
 不需要也沒有任何後端伺服器；擴充功能不會發出任何網路請求。
 
-### 隱私權政策（需要一個公開網址）
+### 隱私權政策
 
-- [ ] 以 GitHub repo 的 `PRIVACY.md` 或 GitHub Pages 發布，內容同上：只在本機處理、不上傳、不分享；使用者可在選項頁匯出或清除所有資料。
+- [x] 本 repo 的 [`PRIVACY.md`](PRIVACY.md)（中文＋英文摘要），網址見上方「商店資訊」。repo 是公開的，推到 `main` 後網址就能開。改到資料處理方式時要同步更新這份與上面的揭露表。
 
 ## 送審注意事項
 
@@ -98,9 +101,33 @@
 - 「匯入過去紀錄」和自動更新會在背景開啟分頁並自動翻頁，完成後關閉；只開使用者已連結的平台，自動更新只在使用者開著已連結平台的頁面時才執行。
 - 審查步驟：安裝後在選項頁「連結平台」打開要測試的平台並按「允許」，再到該平台頁面操作。
 
+## 上架步驟
+
+1. 註冊 [Chrome Web Store 開發人員帳戶](https://chrome.google.com/webstore/devconsole)（一次性 US$5，需開啟 Google 帳戶兩步驟驗證）；交易者身分選「非交易者」。
+2. `npm test` 確認通過，`npm run pack` 產生 `dist/stream-budget-<version>.zip`（只含 `manifest.json`、`icons/`、`src/`、`popup/`、`options/`、`stats/`、`ui/`、`vendor/`）。
+3. 開發人員主控台 →「新增項目」→ 上傳 zip。
+4. **商品詳細資料**：照「商店資訊」填寫名稱、說明、類別、語言；上傳 `docs/store/` 的圖片。
+5. **隱私權**：填「單一用途說明」、每個權限的理由（照「權限使用理由」與「網站存取」兩張表）、遠端程式碼選「否」、資料使用勾選「資料使用揭露」表中的項目與三項承諾、隱私權政策網址。
+6. **發布設定**：瀏覽權限選「不公開」；地區保留全部或只選台灣。
+7. 「測試說明」欄貼上下方的審查步驟後送審。通過後把商店連結給使用者。
+
+### 給審查人員的測試說明（英文，貼到 Test instructions）
+
+> No account or server is needed to see the extension's core UI. After installing, open the options page → "連結平台" (Connect platforms) and toggle a platform; Chrome will ask for that site's permission. Transaction pages require the reviewer's own logged-in account on HiveBee / Google Payments / Twitch, so they may show no records. You can instead use "手動新增一筆" (Add manually) in the popup to add a record and see the monthly budget progress, notifications and charts. All data stays in chrome.storage.local; the extension makes no network requests.
+
+### 從「載入未封裝項目」改用商店版
+
+商店版的擴充功能 ID 和本機載入的不同，資料不會自動帶過去：
+
+1. 在舊版設定頁「資料」按「匯出 JSON」。
+2. 安裝商店版，到設定頁「資料」按「匯入 JSON」。
+3. 到「連結平台」把要用的平台重新打開並允許網站存取（權限跟著擴充功能 ID，不會隨檔案匯入）。
+4. 在 `chrome://extensions` 移除舊的未封裝版本，避免兩個同時讀取、重複提醒。
+
 ## 變更紀錄
 
 | 日期 | 版本 | 權限／資料相關變更 |
 |---|---|---|
+| 2026-11-06 | 0.1.2 | 首次送審（不公開）；權限與資料處理無變更；新增隱私權政策 `PRIVACY.md` |
 | 2026-11-05 | 0.1.0 | 網站存取改為選用（`optional_host_permissions`），使用者在「連結平台」勾選並允許後才讀取；新增 `scripting` 權限用來動態註冊腳本 |
 | 2026-11-05 | 0.1.0 | 初版：`storage`、`notifications`、`alarms`；HiveBee、YouTube、Google 付款中心、Twitch 網站存取 |

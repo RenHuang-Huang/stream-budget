@@ -7,3 +7,6 @@ node_modules/
 .claude/
 skills-lock.json
 .mcp.json
+
+# 上架打包輸出
+dist/
