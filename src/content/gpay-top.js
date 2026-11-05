@@ -1,5 +1,5 @@
 // pay.google.com 外層：
-// 1. 把目前選的付款資料名稱（右上角下拉選單，例如「王小明」）傳給活動 iframe
+// 1. 活動 iframe 來問時，回覆目前選的付款資料名稱（右上角下拉選單，例如「王小明」）
 // 2. 顯示 iframe 傳來的狀態條
 // 3. 匯入過去紀錄時，一個付款資料做完就切到下一個；全部做完切回原本的付款資料，再通知背景關分頁
 //
@@ -16,15 +16,6 @@
     if (opt) return optionName(opt);
     const chip = [...document.querySelectorAll('button[aria-labelledby^="chip_"]')].find((b) => b.offsetParent);
     return chip?.textContent.replace(/arrow_drop_down\S*/g, '').trim() || '';
-  }
-
-  function post() {
-    const n = name();
-    if (!n) return;
-    for (const f of document.querySelectorAll('iframe')) {
-      if (!f.src.includes('/timelineview')) continue;
-      f.contentWindow?.postMessage({ sb: 'gpayProfile', name: n }, 'https://payments.google.com');
-    }
   }
 
   let switching = false;
@@ -52,13 +43,14 @@
 
   window.addEventListener('message', (e) => {
     if (e.origin !== 'https://payments.google.com') return;
+    // 活動 iframe 來問目前的付款資料名稱：回給發問的視窗，targetOrigin 用它實際的 origin，不會對不上
+    if (e.data?.sb === 'gpayAsk') {
+      const n = name();
+      if (n) e.source?.postMessage({ sb: 'gpayProfile', name: n }, e.origin);
+    }
     if (e.data?.sb === 'banner') SB.showBanner(e.data.summary);
     if (e.data?.sb === 'gpayDone') advance();
   });
 
-  // 切換付款資料、iframe 重新載入時都會觸發 DOM 變動；另外每 2 秒補送一次，確保 iframe 載入後收得到
-  new MutationObserver(post).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-selected'] });
-  setInterval(post, 2000);
-  post();
   setTimeout(advance, 3000); // 切換付款資料重新載入後，若目前這個已做完（例如切回原本的），接著往下
 })();

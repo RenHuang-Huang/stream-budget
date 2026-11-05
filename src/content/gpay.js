@@ -1,13 +1,19 @@
 // Google 付款中心「活動」iframe（payments.google.com/payments/u/N/timelineview）
 // 解析邏輯在 src/lib/gpay.js；這裡只負責讀 DOM、取得付款資料名稱、送出、匯入過去紀錄時自動載入更多。
-// 付款資料名稱在外層 pay.google.com，由 gpay-top.js 用 postMessage 傳進來。
+// 付款資料名稱在外層 pay.google.com：這裡每 2 秒用 postMessage 問一次（gpayAsk），gpay-top.js 回覆給發問的視窗。
+// 由 iframe 主動問而不是外層主動送：外層看不到跨網域 iframe 當下實際的網址（Google 會把它導來導去），
+// 指定的 targetOrigin 一對不上 Chrome 就會報「target origin … does not match」錯誤。
 (async () => {
-  if (window.top === window) return; // 只在 iframe 裡跑（直接開這個網址時讀不到付款資料名稱）
+  const TOP = 'https://pay.google.com';
+  const ancestors = location.ancestorOrigins || [];
+  // 只在嵌在 pay.google.com 裡的 iframe 跑（直接開這個網址時讀不到付款資料名稱）
+  if (window.top === window || ancestors[ancestors.length - 1] !== TOP) return;
+  const toTop = (msg) => window.top.postMessage(msg, TOP);
   const { parseGpayRows, rowDates } = await import(chrome.runtime.getURL('src/lib/gpay.js'));
 
   let profile = null;
   window.addEventListener('message', (e) => {
-    if (e.origin !== 'https://pay.google.com' || e.data?.sb !== 'gpayProfile') return;
+    if (e.origin !== TOP || e.data?.sb !== 'gpayProfile') return;
     if (e.data.name && e.data.name !== profile) {
       profile = e.data.name;
       SB.send('gpaySeen', { profile }); // 沒有任何紀錄的付款資料也要出現在選項頁
@@ -45,7 +51,7 @@
     await SB.send('backfillProgress', { key, info: { label: `Google 付款資料「${profile}」`, count: raw.length, oldest } });
     if (!more || (oldest && oldest < since)) {
       await SB.send('backfillDone', { key });
-      window.top.postMessage({ sb: 'gpayDone', profile }, 'https://pay.google.com');
+      toTop({ sb: 'gpayDone', profile });
       return;
     }
     SB.press(more);
@@ -64,13 +70,16 @@
       if (rows.length) {
         const res = await SB.report(rows);
         document.getElementById('sb-banner')?.remove();
-        if (res?.summary) window.top.postMessage({ sb: 'banner', summary: res.summary }, 'https://pay.google.com');
+        if (res?.summary) toTop({ sb: 'banner', summary: res.summary });
       }
       if (profile) backfillStep(raw);
     }, 800);
   }
 
   new MutationObserver(run).observe(document.body, { childList: true, subtree: true });
+  const ask = () => toTop({ sb: 'gpayAsk' });
+  setInterval(ask, 2000);
+  ask();
   // 等外層傳付款資料名稱；8 秒內沒收到就用「未知」（之後收到真名稱時，背景會清掉「未知」的重複紀錄）
   setTimeout(() => { if (!profile) { gaveUp = true; run(); } }, 8000);
 })();

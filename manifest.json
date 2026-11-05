@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "斗內預算管家",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "整理 HiveBee / YouTube / Twitch 的贊助紀錄，依直播主與總額設定每月上限。",
   "icons": {
     "16": "icons/icon16.png",
