@@ -135,12 +135,19 @@ $('#export').onclick = async () => {
 
 $('#import').onchange = async (e) => {
   const file = e.target.files[0];
+  e.target.value = '';
   if (!file) return;
-  const data = JSON.parse(await file.text());
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { data = null; }
+  if (!data?.settings || typeof data.settings !== 'object') {
+    setSaveState('dirty', '這不是斗內預算管家匯出的 JSON 檔，沒有匯入');
+    return;
+  }
   await send('importData', { data: { settings: data.settings, records: data.records || {} } });
   settings = await send('getSettings');
   render();
-  markClean();
+  setSaveState('saved', '已匯入；換電腦或改裝商店版時，請到「連結平台」重新允許網站存取');
+  setTimeout(() => $('#savebar').classList.contains('saved') && markClean(), 6000);
 };
 
 $('#clear').onclick = async () => {
